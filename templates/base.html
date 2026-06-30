@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Mundial 2026 · Álbum Panini{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+        :root {
+            --panini-blue: #1a237e;
+            --panini-gold: #ffd700;
+            --panini-red: #e53935;
+            --panini-green: #43a047;
+            --panini-bg: #0d1b2a;
+            --sticker-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,215,0,0.1);
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--panini-bg); min-height: 100vh; }
+        .font-display { font-family: 'Fredoka', sans-serif; }
+        /* Panini Header */
+        .panini-header { background: linear-gradient(135deg, #0d1b2a 0%, #1a237e 50%, #0d1b2a 100%); border-bottom: 3px solid var(--panini-gold); position: relative; }
+        .panini-header::after { content: ''; position: absolute; bottom: -3px; left: 0; right: 0; height: 3px; background: repeating-linear-gradient(90deg, var(--panini-gold) 0px, var(--panini-gold) 20px, transparent 20px, transparent 40px); }
+        /* Sticker Card */
+        .sticker-card { background: linear-gradient(180deg, #ffffff 0%, #f5f7ff 100%); border: 2.5px solid var(--panini-gold); border-radius: 16px; box-shadow: var(--sticker-shadow); transition: all 0.3s cubic-bezier(.4,0,.2,1); position: relative; overflow: hidden; }
+        .sticker-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--panini-gold), #ffaa00, var(--panini-gold)); }
+        .sticker-card:hover { transform: translateY(-6px) scale(1.01); box-shadow: 0 8px 40px rgba(255,215,0,0.3), 0 0 0 1px rgba(255,215,0,0.3); }
+        /* Panini Button */
+        .btn-panini { background: linear-gradient(135deg, var(--panini-gold), #ffaa00); color: #1a237e; font-weight: 700; padding: 10px 28px; border-radius: 30px; border: none; cursor: pointer; transition: all 0.3s; font-family: 'Fredoka', sans-serif; letter-spacing: 0.5px; box-shadow: 0 4px 15px rgba(255,215,0,0.3); }
+        .btn-panini:hover { transform: scale(1.05); box-shadow: 0 6px 25px rgba(255,215,0,0.5); }
+        /* Sticker Badge */
+        .sticker-badge { display: inline-flex; align-items: center; gap: 4px; background: var(--panini-blue); color: var(--panini-gold); padding: 3px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; font-family: 'Fredoka', sans-serif; }
+        /* Gold Text */
+        .text-gold { background: linear-gradient(135deg, var(--panini-gold), #ffaa00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .text-gold-solid { color: var(--panini-gold); }
+        /* Sticker Grid */
+        .sticker-grid { display: grid; gap: 4px; }
+        .sticker-item { background: white; border: 2px solid #e0e0e0; border-radius: 10px; padding: 8px 10px; display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
+        .sticker-item:hover { border-color: var(--panini-gold); box-shadow: 0 2px 8px rgba(255,215,0,0.2); }
+        /* Nav */
+        .nav-item { color: #90a4ae; font-weight: 500; padding: 8px 18px; border-radius: 20px; transition: all 0.3s; font-family: 'Fredoka', sans-serif; font-size: 14px; }
+        .nav-item:hover, .nav-item.active { color: var(--panini-gold); background: rgba(255,215,0,0.1); }
+        /* Table Panini */
+        .table-panini { border-collapse: separate; border-spacing: 0 3px; width: 100%; }
+        .table-panini thead th { background: var(--panini-blue); color: var(--panini-gold); padding: 8px 10px; font-size: 11px; font-weight: 600; font-family: 'Fredoka', sans-serif; letter-spacing: 0.5px; text-transform: uppercase; }
+        .table-panini tbody td { padding: 8px 10px; background: rgba(255,255,255,0.95); border-bottom: 1px solid #e8eaf6; font-size: 13px; }
+        .table-panini tbody tr:last-child td:first-child { border-radius: 0 0 0 10px; }
+        .table-panini tbody tr:last-child td:last-child { border-radius: 0 0 10px 0; }
+        /* Score Input */
+        .score-input { width: 38px; text-align: center; border: 2px solid #c5cae9; border-radius: 8px; font-weight: 700; font-size: 16px; padding: 3px; font-family: 'Fredoka', sans-serif; background: white; transition: all 0.2s; }
+        .score-input:focus { border-color: var(--panini-gold); outline: none; box-shadow: 0 0 0 3px rgba(255,215,0,0.2); }
+        /* Match Card */
+        .match-card { background: white; border-radius: 12px; padding: 10px 12px; border-left: 4px solid var(--panini-gold); transition: all 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+        .match-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+        .match-card.done { border-left-color: #5c6bc0; background: linear-gradient(135deg, #fff, #f5f7ff); }
+        .match-card.live { border-left-color: #43a047; background: linear-gradient(135deg, #fff, #e8f5e9); animation: pulse-live 2s infinite; }
+        @keyframes pulse-live { 0%,100% { box-shadow: 0 0 0 0 rgba(67,160,71,0.2); } 50% { box-shadow: 0 0 0 8px rgba(67,160,71,0); } }
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--panini-bg); }
+        ::-webkit-scrollbar-thumb { background: var(--panini-gold); border-radius: 3px; }
+        /* Panini flag circle */
+        .flag-circle { width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 20px; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.12); flex-shrink: 0; }
+        /* Sticker number */
+        .sticker-num { position: absolute; top: 6px; right: 8px; background: var(--panini-gold); color: var(--panini-blue); font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 8px; font-family: 'Fredoka', sans-serif; }
+        /* Goal scorer row */
+        .gs-row { display: flex; align-items: center; gap: 10px; padding: 6px 10px; background: white; border-radius: 10px; border: 1.5px solid #e8eaf6; }
+        .gs-gold { background: linear-gradient(135deg, #fff8e1, #fff3cd); border-color: var(--panini-gold); }
+        .gs-silver { background: linear-gradient(135deg, #f5f5f5, #eeeeee); border-color: #bdbdbd; }
+        .gs-bronze { background: linear-gradient(135deg, #fff3e0, #ffe0b2); border-color: #ff9800; }
+        @media (max-width: 768px) { .nav-item { font-size: 12px; padding: 6px 12px; } }
+    </style>
+</head>
+<body>
+    <!-- Header Panini -->
+    <header class="panini-header">
+        <div class="max-w-7xl mx-auto px-4 py-3">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+                <div class="flex items-center gap-3">
+                    <div class="text-3xl">🏆</div>
+                    <div>
+                        <h1 class="text-xl md:text-2xl font-bold text-white font-display">Mundial 2026</h1>
+                        <p class="text-gold-solid text-xs font-display font-medium tracking-wider">⭐ ÁLBUM PANINI · INTERACTIVO ⭐</p>
+                    </div>
+                </div>
+                <nav class="flex gap-1 md:gap-2 flex-wrap">
+                    <a href="/" class="nav-item {% if request.path == '/' %}active{% endif %}">🏠 Inicio</a>
+                    <a href="/groups" class="nav-item {% if request.path == '/groups' %}active{% endif %}">📋 Grupos</a>
+                    <a href="/bracket" class="nav-item {% if request.path == '/bracket' %}active{% endif %}">🏆 Llaves</a>
+                    <a href="/stats" class="nav-item {% if request.path == '/stats' %}active{% endif %}">📊 Stats</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Content -->
+    <main class="max-w-7xl mx-auto px-4 py-5">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center py-6 text-gray-600 text-xs px-4">
+        <p class="font-display">🇨🇦 🇲🇽 🇺🇸 <span class="text-gold-solid">FIFA World Cup 2026™</span> — Datos oficiales · Diseño inspirado en Panini®</p>
+        <p class="mt-1 text-gray-500">App interactiva — Haz clic en los marcadores para editarlos en tiempo real</p>
+    </footer>
+
+    <script>
+        {% if request.path in ['/bracket', '/stats'] %}
+        setTimeout(() => { location.reload(); }, 60000);
+        {% endif %}
+    </script>
+</body>
+</html>
