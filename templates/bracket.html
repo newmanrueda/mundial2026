@@ -1,7 +1,13 @@
 {% extends "base.html" %}
 {% block content %}
 <h2 class="text-3xl font-bold text-white mb-2">🏆 Fase Final</h2>
-<p class="text-gray-400 mb-6">32 equipos · Eliminación directa · Haz clic en los marcadores para editarlos</p>
+<p class="text-gray-400 mb-6">32 equipos · Eliminación directa</p>
+
+{% if not is_admin %}
+<div class="bg-indigo-900/50 border border-yellow-500/30 rounded-xl p-3 mb-6 text-center">
+    <p class="text-yellow-400 text-sm font-medium">🔒 Solo lectura — Los marcadores los actualiza el administrador</p>
+</div>
+{% endif %}
 
 <div class="panini-card p-6 mb-8">
     <div class="flex items-center gap-4 mb-4 text-sm">
@@ -28,10 +34,12 @@
                 </div>
                 {% if match.status in ['done', 'live'] %}
                 <input type="number" class="score-input" value="{{ match.score1 if match.score1 is not none else '' }}" 
-                       onchange="updateScore('round_of_32','{{ match.id }}',1,this.value)" min="0" max="20">
+                       onchange="updateScore('round_of_32','{{ match.id }}',1,this.value)" min="0" max="20"
+                       {% if not is_admin %}disabled{% endif %}>
                 {% else %}
                 <input type="number" class="score-input bg-gray-50" placeholder="-" 
-                       onchange="updateScore('round_of_32','{{ match.id }}',1,this.value)" min="0" max="20">
+                       onchange="updateScore('round_of_32','{{ match.id }}',1,this.value)" min="0" max="20"
+                       {% if not is_admin %}disabled{% endif %}>
                 {% endif %}
             </div>
             
@@ -41,7 +49,8 @@
                     <span class="font-semibold text-gray-800 text-sm truncate">{{ teams.get(match.team2, match.team2) }}</span>
                 </div>
                 <input type="number" class="score-input" value="{{ match.score2 if match.score2 is not none else '' }}" 
-                       onchange="updateScore('round_of_32','{{ match.id }}',2,this.value)" min="0" max="20">
+                       onchange="updateScore('round_of_32','{{ match.id }}',2,this.value)" min="0" max="20"
+                       {% if not is_admin %}disabled{% endif %}>
             </div>
 
             {% if match.pens1 is not none %}
@@ -55,7 +64,7 @@
                 {% elif match.status == 'done' %}<span class="text-xs font-bold text-indigo-600">✅ Final</span>
                 {% else %}<span class="text-xs text-gray-400">⏳ {{ match.date }}</span>
                 {% endif %}
-                {% if match.status == 'done' %}
+                {% if match.status == 'done' and is_admin %}
                 <button onclick="resetMatch('round_of_32','{{ match.id }}')" class="text-xs text-red-400 hover:text-red-600">↺</button>
                 {% endif %}
             </div>
@@ -87,7 +96,8 @@
                 <input type="number" class="score-input {% if match.status in ['waiting','upcoming'] %}bg-gray-50{% endif %}" 
                        value="{{ match.score1 if match.score1 is not none else '' }}" 
                        onchange="updateScore('round_of_16','{{ match.id }}',1,this.value)" min="0" max="20" 
-                       {% if match.status == 'waiting' %}placeholder="—"{% endif %}>
+                       {% if match.status == 'waiting' %}placeholder="—"{% endif %}
+                       {% if not is_admin %}disabled{% endif %}>
             </div>
             
             <div class="flex items-center justify-between gap-2 py-1">
@@ -98,7 +108,8 @@
                 <input type="number" class="score-input {% if match.status in ['waiting','upcoming'] %}bg-gray-50{% endif %}" 
                        value="{{ match.score2 if match.score2 is not none else '' }}" 
                        onchange="updateScore('round_of_16','{{ match.id }}',2,this.value)" min="0" max="20"
-                       {% if match.status == 'waiting' %}placeholder="—"{% endif %}>
+                       {% if match.status == 'waiting' %}placeholder="—"{% endif %}
+                       {% if not is_admin %}disabled{% endif %}>
             </div>
             
             <div class="flex justify-between items-center mt-2">
@@ -129,10 +140,12 @@
                 </div>
                 {% if loop.index0 == 0 %}
                 <input type="number" class="score-input bg-gray-50" value="{{ match.score1 if match.score1 is not none else '' }}" 
-                       onchange="updateScore('quarterfinals','{{ match.id }}',1,this.value)" min="0" max="20" placeholder="—">
+                       onchange="updateScore('quarterfinals','{{ match.id }}',1,this.value)" min="0" max="20" placeholder="—"
+                       {% if not is_admin %}disabled{% endif %}>
                 {% else %}
                 <input type="number" class="score-input bg-gray-50" value="{{ match.score2 if match.score2 is not none else '' }}" 
-                       onchange="updateScore('quarterfinals','{{ match.id }}',2,this.value)" min="0" max="20" placeholder="—">
+                       onchange="updateScore('quarterfinals','{{ match.id }}',2,this.value)" min="0" max="20" placeholder="—"
+                       {% if not is_admin %}disabled{% endif %}>
                 {% endif %}
             </div>
             {% endfor %}
@@ -165,10 +178,12 @@
                     </div>
                     {% if loop.index0 == 0 %}
                     <input type="number" class="score-input bg-gray-50" value="{{ match.score1 if match.score1 is not none else '' }}" 
-                           onchange="updateScore('semifinals','{{ match.id }}',1,this.value)" min="0" max="20" placeholder="—">
+                           onchange="updateScore('semifinals','{{ match.id }}',1,this.value)" min="0" max="20" placeholder="—"
+                           {% if not is_admin %}disabled{% endif %}>
                     {% else %}
                     <input type="number" class="score-input bg-gray-50" value="{{ match.score2 if match.score2 is not none else '' }}" 
-                           onchange="updateScore('semifinals','{{ match.id }}',2,this.value)" min="0" max="20" placeholder="—">
+                           onchange="updateScore('semifinals','{{ match.id }}',2,this.value)" min="0" max="20" placeholder="—"
+                           {% if not is_admin %}disabled{% endif %}>
                     {% endif %}
                 </div>
                 {% endfor %}
@@ -202,10 +217,12 @@
                     </div>
                     {% if loop.index0 == 0 %}
                     <input type="number" class="score-input bg-gray-50" value="{{ match.score1 if match.score1 is not none else '' }}" 
-                           onchange="updateScore('final','{{ match.id }}',1,this.value)" min="0" max="20" placeholder="—">
+                           onchange="updateScore('final','{{ match.id }}',1,this.value)" min="0" max="20" placeholder="—"
+                           {% if not is_admin %}disabled{% endif %}>
                     {% else %}
                     <input type="number" class="score-input bg-gray-50" value="{{ match.score2 if match.score2 is not none else '' }}" 
-                           onchange="updateScore('final','{{ match.id }}',2,this.value)" min="0" max="20" placeholder="—">
+                           onchange="updateScore('final','{{ match.id }}',2,this.value)" min="0" max="20" placeholder="—"
+                           {% if not is_admin %}disabled{% endif %}>
                     {% endif %}
                 </div>
                 {% endfor %}
@@ -217,10 +234,12 @@
 
 <script>
 function updateScore(round, matchId, team, value) {
+    {% if not is_admin %}
+    return;
+    {% endif %}
     const val = value === '' ? null : parseInt(value);
     if (val !== null && (isNaN(val) || val < 0)) return;
     
-    // Get all inputs in this match's card
     const card = event.target.closest('.match-card');
     if (!card) return;
     const inputs = card.querySelectorAll('input[type="number"]');
@@ -243,11 +262,16 @@ function updateScore(round, matchId, team, value) {
     .then(data => {
         if (data.success) {
             setTimeout(() => { location.reload(); }, 500);
+        } else {
+            alert('Error: ' + (data.error || 'No autorizado'));
         }
     });
 }
 
 function resetMatch(round, matchId) {
+    {% if not is_admin %}
+    return;
+    {% endif %}
     if (!confirm('¿Resetear este partido?')) return;
     fetch('/api/reset_match', {
         method: 'POST',
@@ -257,6 +281,7 @@ function resetMatch(round, matchId) {
     .then(r => r.json())
     .then(data => {
         if (data.success) location.reload();
+        else alert('Error: ' + (data.error || 'No autorizado'));
     });
 }
 </script>

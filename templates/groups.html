@@ -3,6 +3,12 @@
 <h2 class="text-3xl font-bold text-white mb-6">📋 Fase de Grupos</h2>
 <p class="text-gray-400 mb-6">12 grupos de 4 equipos. Los 2 primeros + 8 mejores terceros avanzan a Octavos de Final.</p>
 
+{% if not is_admin %}
+<div class="bg-indigo-900/50 border border-yellow-500/30 rounded-xl p-3 mb-6 text-center">
+    <p class="text-yellow-400 text-sm font-medium">🔒 Solo lectura — Los resultados los actualiza el administrador</p>
+</div>
+{% endif %}
+
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
     {% for letter, group in sorted_groups.items() %}
     {% set sorted_list = group.sorted_teams %}
@@ -48,11 +54,56 @@
                             </div>
                         </td>
                         <td class="text-center py-2 font-medium">{{ r.w + r.d + r.l }}</td>
-                        <td class="text-center py-2 text-green-600 font-medium">{{ r.w }}</td>
-                        <td class="text-center py-2 text-gray-500 font-medium">{{ r.d }}</td>
-                        <td class="text-center py-2 text-red-500 font-medium">{{ r.l }}</td>
-                        <td class="text-center py-2 font-medium">{{ r.gf }}</td>
-                        <td class="text-center py-2 font-medium">{{ r.ga }}</td>
+                        <td class="text-center py-2">
+                            {% if is_admin %}
+                            <input type="number" class="w-8 text-center text-green-600 font-medium border border-green-200 rounded text-sm p-0.5" 
+                                   value="{{ r.w }}" min="0" max="3"
+                                   onchange="updateGroup('{{ letter }}','{{ code }}','w',this.value)"
+                                   style="-moz-appearance:textfield;">
+                            {% else %}
+                            <span class="text-green-600 font-medium">{{ r.w }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center py-2">
+                            {% if is_admin %}
+                            <input type="number" class="w-8 text-center text-gray-500 font-medium border border-gray-200 rounded text-sm p-0.5" 
+                                   value="{{ r.d }}" min="0" max="3"
+                                   onchange="updateGroup('{{ letter }}','{{ code }}','d',this.value)"
+                                   style="-moz-appearance:textfield;">
+                            {% else %}
+                            <span class="text-gray-500 font-medium">{{ r.d }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center py-2">
+                            {% if is_admin %}
+                            <input type="number" class="w-8 text-center text-red-500 font-medium border border-red-200 rounded text-sm p-0.5" 
+                                   value="{{ r.l }}" min="0" max="3"
+                                   onchange="updateGroup('{{ letter }}','{{ code }}','l',this.value)"
+                                   style="-moz-appearance:textfield;">
+                            {% else %}
+                            <span class="text-red-500 font-medium">{{ r.l }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center py-2">
+                            {% if is_admin %}
+                            <input type="number" class="w-8 text-center font-medium border border-gray-200 rounded text-sm p-0.5" 
+                                   value="{{ r.gf }}" min="0" max="30"
+                                   onchange="updateGroup('{{ letter }}','{{ code }}','gf',this.value)"
+                                   style="-moz-appearance:textfield;">
+                            {% else %}
+                            <span class="font-medium">{{ r.gf }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center py-2">
+                            {% if is_admin %}
+                            <input type="number" class="w-8 text-center font-medium border border-gray-200 rounded text-sm p-0.5" 
+                                   value="{{ r.ga }}" min="0" max="30"
+                                   onchange="updateGroup('{{ letter }}','{{ code }}','ga',this.value)"
+                                   style="-moz-appearance:textfield;">
+                            {% else %}
+                            <span class="font-medium">{{ r.ga }}</span>
+                            {% endif %}
+                        </td>
                         <td class="text-center py-2 font-bold {% if dg > 0 %}text-green-600{% elif dg < 0 %}text-red-500{% endif %}">{{ dg }}</td>
                         <td class="text-center py-2 font-bold text-indigo-600 text-base">{{ pts }}</td>
                     </tr>
@@ -109,4 +160,30 @@
         {% endfor %}
     </div>
 </div>
+
+<script>
+function updateGroup(groupLetter, teamCode, field, value) {
+    const val = value === '' ? 0 : parseInt(value);
+    if (isNaN(val) || val < 0) return;
+    
+    fetch('/api/update_group', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            group: groupLetter,
+            team: teamCode,
+            field: field,
+            value: val
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            setTimeout(() => { location.reload(); }, 300);
+        } else {
+            alert('Error: ' + (data.error || 'No autorizado'));
+        }
+    });
+}
+</script>
 {% endblock %}

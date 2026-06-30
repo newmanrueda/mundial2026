@@ -82,11 +82,14 @@
                         <p class="text-gold-solid text-xs font-display font-medium tracking-wider">⭐ ÁLBUM PANINI · INTERACTIVO ⭐</p>
                     </div>
                 </div>
-                <nav class="flex gap-1 md:gap-2 flex-wrap">
+                <nav class="flex gap-1 md:gap-2 flex-wrap items-center">
                     <a href="/" class="nav-item {% if request.path == '/' %}active{% endif %}">🏠 Inicio</a>
                     <a href="/groups" class="nav-item {% if request.path == '/groups' %}active{% endif %}">📋 Grupos</a>
                     <a href="/bracket" class="nav-item {% if request.path == '/bracket' %}active{% endif %}">🏆 Llaves</a>
                     <a href="/stats" class="nav-item {% if request.path == '/stats' %}active{% endif %}">📊 Stats</a>
+                    <button id="adminBtn" onclick="toggleAdmin()" class="nav-item {% if is_admin %}active text-green-400{% endif %}">
+                        {% if is_admin %}🔓 Admin{% else %}🔒 Admin{% endif %}
+                    </button>
                 </nav>
             </div>
         </div>
@@ -102,6 +105,75 @@
         <p class="font-display">🇨🇦 🇲🇽 🇺🇸 <span class="text-gold-solid">FIFA World Cup 2026™</span> — Datos oficiales · Diseño inspirado en Panini®</p>
         <p class="mt-1 text-gray-500">App interactiva — Haz clic en los marcadores para editarlos en tiempo real</p>
     </footer>
+
+    <!-- Admin Modal -->
+    <div id="adminModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 hidden" style="backdrop-filter: blur(4px);">
+        <div class="panini-card p-6 w-full max-w-sm mx-4 relative">
+            <div class="text-center mb-4">
+                <div class="text-4xl mb-2">🔑</div>
+                <h3 class="text-xl font-bold font-display text-gold">Acceso Admin</h3>
+                <p class="text-gray-500 text-sm mt-1">Ingresa la contraseña para editar marcadores</p>
+            </div>
+            <input type="password" id="adminPass" placeholder="Contraseña" 
+                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl text-center text-lg font-bold focus:border-yellow-400 focus:outline-none"
+                   onkeydown="if(event.key==='Enter')submitAdminPass()">
+            <p id="adminError" class="text-red-500 text-sm mt-2 hidden text-center">Contraseña incorrecta</p>
+            <div class="flex gap-3 mt-4">
+                <button onclick="closeAdminModal()" class="flex-1 px-4 py-2.5 rounded-xl bg-gray-200 font-semibold text-gray-600 hover:bg-gray-300">Cancelar</button>
+                <button onclick="submitAdminPass()" class="flex-1 px-4 py-2.5 rounded-xl btn-panini text-center">Ingresar</button>
+            </div>
+            <button onclick="closeAdminModal()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+        </div>
+    </div>
+
+    <script>
+    let isAdmin = {{ 'true' if is_admin else 'false' }};
+
+    function toggleAdmin() {
+        if (isAdmin) {
+            // Logout
+            fetch('/api/logout', {method: 'POST'})
+            .then(r => r.json())
+            .then(d => { if (d.success) location.reload(); });
+        } else {
+            document.getElementById('adminModal').classList.remove('hidden');
+            document.getElementById('adminPass').value = '';
+            document.getElementById('adminError').classList.add('hidden');
+            setTimeout(() => document.getElementById('adminPass').focus(), 100);
+        }
+    }
+
+    function closeAdminModal() {
+        document.getElementById('adminModal').classList.add('hidden');
+    }
+
+    function submitAdminPass() {
+        const pass = document.getElementById('adminPass').value;
+        fetch('/api/auth', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({password: pass})
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                location.reload();
+            } else {
+                document.getElementById('adminError').classList.remove('hidden');
+                document.getElementById('adminPass').value = '';
+                document.getElementById('adminPass').focus();
+            }
+        })
+        .catch(() => {
+            document.getElementById('adminError').classList.remove('hidden');
+        });
+    }
+
+    // Close modal on outside click
+    document.getElementById('adminModal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeAdminModal();
+    });
+    </script>
 
     <script>
         {% if request.path in ['/bracket', '/stats'] %}
