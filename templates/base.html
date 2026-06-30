@@ -69,6 +69,23 @@
         .gs-bronze { background: linear-gradient(135deg, #fff3e0, #ffe0b2); border-color: #ff9800; }
         @media (max-width: 768px) { .nav-item { font-size: 12px; padding: 6px 12px; } }
     </style>
+    <style>
+        /* Fix dark mode: force text colors inside cards */
+        .panini-card .text-gray-800,
+        .sticker-card .text-gray-800,
+        .match-card .text-gray-800 { color: #1f2937 !important; }
+        .panini-card .font-semibold,
+        .sticker-card .font-semibold { color: #1f2937 !important; }
+        .match-card .font-semibold { color: #374151 !important; }
+        .panini-card td { color: #374151 !important; }
+        .panini-card th { color: #9ca3af !important; }
+        @media (prefers-color-scheme: dark) {
+            .panini-card, .sticker-card, .match-card { background: #ffffff !important; }
+            .panini-card td, .panini-card .font-semibold,
+            .sticker-card .font-semibold,
+            .match-card .font-semibold { color: #1f2937 !important; }
+        }
+    </style>
 </head>
 <body>
     <!-- Header Panini -->
