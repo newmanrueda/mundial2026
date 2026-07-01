@@ -7,6 +7,13 @@
 <div class="bg-indigo-900/50 border border-yellow-500/30 rounded-xl p-3 mb-6 text-center">
     <p class="text-yellow-400 text-sm font-medium">🔒 Solo lectura — Los marcadores los actualiza el administrador</p>
 </div>
+{% else %}
+<div class="bg-green-900/30 border border-green-500/30 rounded-xl p-3 mb-6 text-center flex items-center justify-between">
+    <p class="text-green-400 text-sm font-medium">✅ Modo administrador activo</p>
+    <button onclick="syncToCloud()" class="px-4 py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs font-semibold rounded-lg transition-colors">
+        <i class="fas fa-cloud-upload-alt"></i> Guardar en la nube
+    </button>
+</div>
 {% endif %}
 
 <div class="panini-card p-6 mb-8">
@@ -261,7 +268,7 @@ function updateScore(round, matchId, team, value) {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            setTimeout(() => { location.reload(); }, 500);
+            // Don't reload — the value stays visible
         } else {
             alert('Error: ' + (data.error || 'No autorizado'));
         }
@@ -282,6 +289,35 @@ function resetMatch(round, matchId) {
     .then(data => {
         if (data.success) location.reload();
         else alert('Error: ' + (data.error || 'No autorizado'));
+    });
+}
+
+function syncToCloud() {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+    fetch('/api/sync', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            btn.innerHTML = '✅ Guardado';
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Guardar en la nube';
+                btn.disabled = false;
+            }, 2000);
+        } else {
+            alert('Error: ' + (data.error || 'Error al guardar'));
+            btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Guardar en la nube';
+            btn.disabled = false;
+        }
+    })
+    .catch(err => {
+        alert('Error de conexión');
+        btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Guardar en la nube';
+        btn.disabled = false;
     });
 }
 </script>

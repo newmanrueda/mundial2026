@@ -1,12 +1,19 @@
 from flask import Flask, render_template, request, jsonify, session
 import json
 import os
+import requests
 
 app = Flask(__name__)
 app.secret_key = 'mundial2026-panini-secret'
 
 DATA_FILE = os.path.join(os.path.dirname(__file__), 'data.json')
 ADMIN_PASSWORD = "panini2026"
+
+# GitHub config for persistence
+GITHUB_TOKEN = "ghp_64niJ0tLI1ixnMGUv3UV6bxSVJndSo3bJ3n"
+GITHUB_REPO = "newmanrueda/mundial2026"
+GITHUB_PATH = "data.json"
+GITHUB_RAW_URL = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/{GITHUB_PATH}"
 
 # ── Data Persistence ──────────────────────────────────────────────────────────
 
@@ -193,10 +200,52 @@ DEFAULT_CARDS = {
     "CRO": {"y": 5, "r": 0}, "GHA": {"y": 6, "r": 0}, "PAN": {"y": 8, "r": 0},
 }
 
-# ── Load/Save Data ────────────────────────────────────────────────────────────
+# ── GitHub Sync ──────────────────────────────────────────────────────────────
+
+def pull_from_github():
+    """Download data.json from GitHub raw URL. Returns True on success."""
+    try:
+        resp = requests.get(GITHUB_RAW_URL, timeout=10)
+        if resp.status_code == 200:
+            with open(DATA_FILE, 'w', encoding='utf-8') as f:
+                f.write(resp.text)
+            return True
+    except Exception:
+        pass
+    return False
+
+def push_to_github():
+    """Upload current data.json to GitHub repo. Returns True on success."""
+    try:
+        # Get current file SHA first
+        url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}"
+        headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+        sha = None
+        resp = requests.get(url, headers=headers, timeout=10)
+        if resp.status_code == 200:
+            sha = resp.json().get("sha")
+
+        # Read current data
+        with open(DATA_FILE, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        # Upload
+        import base64
+        payload = {
+            "message": f"Update data.json - {__import__('datetime').datetime.now().strftime('%Y-%m-%d %H:%M')}",
+            "content": base64.b64encode(content.encode()).decode(),
+        }
+        if sha:
+            payload["sha"] = sha
+
+        resp = requests.put(url, headers=headers, json=payload, timeout=15)
+        return resp.status_code in (200, 201)
+    except Exception:
+        return False
+
+# ── Load/Save Data ──────────────────────────────────────────────────────────
 
 def load_data():
-    """Load data from data.json if it exists, otherwise use defaults."""
     if os.path.exists(DATA_FILE):
         try:
             with open(DATA_FILE, 'r', encoding='utf-8') as f:
@@ -205,15 +254,16 @@ def load_data():
             bracket = saved.get('bracket', DEFAULT_BRACKET)
             goalscorers = saved.get('goalscorers', DEFAULT_GOALSCORERS)
             cards = saved.get('cards', DEFAULT_CARDS)
-            # Convert goalscorers back from list format (JSON can't store tuples)
             goalscorers = [tuple(g) for g in goalscorers]
             return groups, bracket, goalscorers, cards
         except (json.JSONDecodeError, KeyError):
             pass
+    # Try GitHub if local file missing
+    if pull_from_github():
+        return load_data()
     return DEFAULT_GROUPS, DEFAULT_BRACKET, DEFAULT_GOALSCORERS, DEFAULT_CARDS
 
 def save_data():
-    """Save current data to data.json."""
     data = {
         'groups': GROUPS,
         'bracket': BRACKET,
@@ -222,12 +272,14 @@ def save_data():
     }
     with open(DATA_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+    # Also push to GitHub in background
+    push_to_github()
 
-# ── Initialize ────────────────────────────────────────────────────────────────
+# ── Initialize ──────────────────────────────────────────────────────────────
 
 GROUPS, BRACKET, GOALSCORERS, CARDS = load_data()
 
-# ── Static Data ────────────────────────────────────────────────────────────────
+# ── Static Data ──────────────────────────────────────────────────────────────
 
 TEAM_NAMES = {
     "MEX":"México","RSA":"Sudáfrica","KOR":"Corea del Sur","CZE":"Rep.Checa",
@@ -259,7 +311,7 @@ TEAM_FLAGS = {
     "ENG":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","CRO":"🇭🇷","GHA":"🇬🇭","PAN":"🇵🇦"
 }
 
-# ── Helpers ────────────────────────────────────────────────────────────────────
+# ── Helpers ──────────────────────────────────────────────────────────────────
 
 def get_winner(match):
     if match.get("status") == "done":
@@ -324,7 +376,7 @@ def compute_clean_sheets():
             clean[code] = r['ga'] == 0
     return clean
 
-# ── Auth ───────────────────────────────────────────────────────────────────────
+# ── Auth ─────────────────────────────────────────────────────────────────────
 
 @app.route('/api/auth', methods=['POST'])
 def admin_auth():
@@ -393,7 +445,7 @@ def stats():
                          flags=TEAM_FLAGS,
                          is_admin=session.get('admin', False))
 
-# ── API: Update Bracket Scores ────────────────────────────────────────────────
+# ── API: Update Bracket Scores ──────────────────────────────────────────────
 
 @app.route('/api/update_score', methods=['POST'])
 def update_score():
@@ -438,7 +490,7 @@ def reset_match():
                 return jsonify({'success': True})
     return jsonify({'success': False, 'error': 'Match not found'}), 404
 
-# ── API: Update Group Results ──────────────────────────────────────────────────
+# ── API: Update Group Results ──────────────────────────────────────────────
 
 @app.route('/api/update_group', methods=['POST'])
 def update_group():
@@ -447,7 +499,7 @@ def update_group():
     data = request.json
     group_letter = data.get('group')
     team_code = data.get('team')
-    field = data.get('field')  # w, d, l, gf, ga
+    field = data.get('field')
     value = data.get('value')
     if group_letter in GROUPS and team_code in GROUPS[group_letter]['results']:
         if field in ('w', 'd', 'l', 'gf', 'ga'):
@@ -456,7 +508,18 @@ def update_group():
             return jsonify({'success': True})
     return jsonify({'success': False, 'error': 'Invalid data'}), 400
 
-# ── Admin Status Check ─────────────────────────────────────────────────────────
+# ── API: Manual Sync to GitHub ────────────────────────────────────────────
+
+@app.route('/api/sync', methods=['POST'])
+def sync_to_github():
+    if not session.get('admin'):
+        return jsonify({'success': False, 'error': 'No autorizado'}), 401
+    save_data()
+    if push_to_github():
+        return jsonify({'success': True, 'message': 'Datos guardados permanentemente en la nube'})
+    return jsonify({'success': False, 'error': 'Error al sincronizar con GitHub'}), 500
+
+# ── Admin Status ──────────────────────────────────────────────────────────
 
 @app.route('/api/admin_status')
 def admin_status():
