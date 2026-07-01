@@ -88,7 +88,7 @@ DEFAULT_GROUPS = {
 DEFAULT_BRACKET = {
     "round_of_32": [
         {"id":"r32_1","team1":"GER","team2":"PAR","score1":1,"score2":1,"pens1":3,"pens2":4,"date":"Jun 29","venue":"Foxborough","status":"done"},
-        {"id":"r32_2","team1":"FRA","team2":"SWE","score1":None,"score2":None,"date":"Jun 30","venue":"East Rutherford","status":"upcoming"},
+        {"id":"r32_2","team1":"FRA","team2":"SWE","score1":None,"score2":None,"date":"Jun 30","venue":"East Rutherford","status":"live"},
         {"id":"r32_3","team1":"RSA","team2":"CAN","score1":0,"score2":1,"date":"Jun 28","venue":"Inglewood","status":"done"},
         {"id":"r32_4","team1":"NED","team2":"MAR","score1":1,"score2":1,"pens1":2,"pens2":3,"date":"Jun 29","venue":"Guadalupe","status":"done"},
         {"id":"r32_5","team1":"POR","team2":"CRO","score1":None,"score2":None,"date":"Jul 2","venue":"Toronto","status":"upcoming"},
@@ -96,8 +96,8 @@ DEFAULT_BRACKET = {
         {"id":"r32_7","team1":"USA","team2":"BIH","score1":None,"score2":None,"date":"Jul 1","venue":"Santa Clara","status":"upcoming"},
         {"id":"r32_8","team1":"BEL","team2":"SEN","score1":None,"score2":None,"date":"Jul 1","venue":"Seattle","status":"upcoming"},
         {"id":"r32_9","team1":"BRA","team2":"JPN","score1":2,"score2":1,"date":"Jun 29","venue":"Houston","status":"done"},
-        {"id":"r32_10","team1":"CIV","team2":"NOR","score1":None,"score2":None,"date":"Jun 30","venue":"Arlington","status":"upcoming"},
-        {"id":"r32_11","team1":"MEX","team2":"ECU","score1":None,"score2":None,"date":"Jun 30","venue":"Mexico City","status":"upcoming"},
+        {"id":"r32_10","team1":"CIV","team2":"NOR","score1":None,"score2":None,"date":"Jun 30","venue":"Arlington","status":"live"},
+        {"id":"r32_11","team1":"MEX","team2":"ECU","score1":None,"score2":None,"date":"Jun 30","venue":"Mexico City","status":"live"},
         {"id":"r32_12","team1":"ENG","team2":"COD","score1":None,"score2":None,"date":"Jul 1","venue":"Atlanta","status":"upcoming"},
         {"id":"r32_13","team1":"ARG","team2":"CPV","score1":None,"score2":None,"date":"Jul 3","venue":"Miami Gardens","status":"upcoming"},
         {"id":"r32_14","team1":"AUS","team2":"EGY","score1":None,"score2":None,"date":"Jul 3","venue":"Arlington","status":"upcoming"},
