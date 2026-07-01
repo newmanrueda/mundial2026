@@ -131,67 +131,51 @@ DEFAULT_BRACKET = {
 }
 
 DEFAULT_GOALSCORERS = [
-    ("Kylian Mbappé", "FRA", 8),
     ("Lionel Messi", "ARG", 6),
-    ("Erling Haaland", "NOR", 6),
+    ("Kylian Mbappé", "FRA", 6),
+    ("Erling Haaland", "NOR", 5),
     ("Harry Kane", "ENG", 5),
     ("Vinícius Júnior", "BRA", 4),
     ("Ousmane Dembélé", "FRA", 4),
-    ("Cody Gakpo", "NED", 4),
-    ("Kai Havertz", "GER", 4),
-    ("Julián Quiñones", "MEX", 4),
-    ("Bradley Barcola", "FRA", 3),
     ("Brian Brobbey", "NED", 3),
-    ("Matheus Cunha", "BRA", 3),
-    ("Jonathan David", "CAN", 3),
-    ("A. Diallo", "CIV", 3),
-    ("Raúl Jiménez", "MEX", 3),
+    ("Deniz Undav", "GER", 3),
     ("Elijah Just", "NZL", 3),
-    ("Johan Manzambi", "SUI", 3),
     ("Ismael Saibari", "MAR", 3),
     ("Ismaïla Sarr", "SEN", 3),
-    ("Deniz Undav", "GER", 3),
+    ("Matheus Cunha", "BRA", 3),
+    ("Jonathan David", "CAN", 3),
+    ("Kai Havertz", "GER", 3),
+    ("Cody Gakpo", "NED", 3),
     ("Yoane Wissa", "COD", 3),
-    ("Marko Arnautović", "AUT", 2),
-    ("Folarin Balogun", "USA", 2),
-    ("Jude Bellingham", "ENG", 2),
-    ("Anthony Elanga", "SWE", 2),
-    ("Pape Gueye", "SEN", 2),
-    ("Daichi Kamada", "JPN", 2),
-    ("Cyle Larin", "CAN", 2),
-    ("Ermin Mahmić", "BIH", 2),
+    ("Johan Manzambi", "SUI", 3),
+    ("Julián Quiñones", "MEX", 3),
     ("Riyad Mahrez", "ALG", 2),
-    ("Daniel Muñoz", "COL", 2),
-    ("Mikel Oyarzabal", "ESP", 2),
-    ("Nicolas Pépé", "CIV", 2),
-    ("Cristiano Ronaldo", "POR", 2),
-    ("Crysencio Summerville", "NED", 2),
+    ("Marko Arnautović", "AUT", 2),
     ("Leandro Trossard", "BEL", 2),
+    ("Ermin Mahmić", "BIH", 2),
+    ("Cyle Larin", "CAN", 2),
+    ("Daniel Muñoz", "COL", 2),
+    ("Jude Bellingham", "ENG", 2),
+    ("Daichi Kamada", "JPN", 2),
     ("Ayase Ueda", "JPN", 2),
+    ("Raúl Jiménez", "MEX", 2),
+    ("Crysencio Summerville", "NED", 2),
+    ("Mikel Oyarzabal", "ESP", 2),
+    ("Anthony Elanga", "SWE", 2),
     ("Rubén Vargas", "SUI", 2),
+    ("Pape Gueye", "SEN", 2),
+    ("Nicolas Pépé", "CIV", 2),
+    ("Folarin Balogun", "USA", 2),
+    ("Bradley Barcola", "FRA", 2),
     ("M. Araújo", "URU", 2),
     ("R. Rezaeian", "IRN", 2),
+    ("A. Diallo", "CIV", 2),
     ("Y. Ayari", "SWE", 2),
-    ("Brian Cipenga", "COD", 1),
-    ("Johan Campaz", "COL", 1),
-    ("Casemiro", "BRA", 1),
+    ("Cristiano Ronaldo", "POR", 2),
     ("Luis Díaz", "COL", 1),
-    ("Issa Diop", "MAR", 1),
-    ("Julio Enciso", "PAR", 1),
-    ("Stephen Eustáquio", "CAN", 1),
-    ("Viktor Gyökeres", "SWE", 1),
-    ("Achraf Hakimi", "MAR", 1),
-    ("Alexander Isak", "SWE", 1),
-    ("Franck Kessié", "CIV", 1),
+    ("Johan Campaz", "COL", 1),
     ("Lautaro Martínez", "ARG", 1),
-    ("Gabriel Martinelli", "BRA", 1),
     ("Giovani Lo Celso", "ARG", 1),
-    ("Antonio Nusa", "NOR", 1),
-    ("Gonzalo Plata", "ECU", 1),
-    ("Kaishu Sano", "JPN", 1),
-    ("Leroy Sané", "GER", 1),
-    ("Jan Paul van Hecke", "NED", 1),
-    ("Virgil van Dijk", "NED", 1),
 ]
 
 DEFAULT_CARDS = {
@@ -494,6 +478,19 @@ def update_group():
             save_data()
             return jsonify({'success': True})
     return jsonify({'success': False, 'error': 'Invalid data'}), 400
+
+# ── API: Update Goalscorers ────────────────────────────────────────────────
+
+@app.route('/api/update_goalscorers', methods=['POST'])
+def update_goalscorers():
+    if not session.get('admin'):
+        return jsonify({'success': False, 'error': 'No autorizado'}), 401
+    global GOALSCORERS
+    data = request.json
+    gs = data.get('goalscorers', [])
+    GOALSCORERS = [tuple(g) if isinstance(g, list) else g for g in gs]
+    save_data()
+    return jsonify({'success': True, 'message': 'Goleadores actualizados correctamente'})
 
 # ── API: Export / Import ────────────────────────────────────────────────────
 
