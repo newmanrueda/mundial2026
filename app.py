@@ -131,11 +131,12 @@ DEFAULT_BRACKET = {
 }
 
 DEFAULT_GOALSCORERS = [
-    ("Lionel Messi", "ARG", 6),
+    ("Lionel Messi", "ARG", 5),
     ("Vinícius Júnior", "BRA", 4),
     ("Ousmane Dembélé", "FRA", 4),
     ("Kylian Mbappé", "FRA", 4),
     ("Erling Haaland", "NOR", 4),
+    ("Cristiano Ronaldo", "POR", 4),
     ("Matheus Cunha", "BRA", 3),
     ("Jonathan David", "CAN", 3),
     ("Harry Kane", "ENG", 3),
@@ -148,7 +149,7 @@ DEFAULT_GOALSCORERS = [
     ("Yoane Wissa", "COD", 3),
     ("Johan Manzambi", "SUI", 3),
     ("Ismaïla Sarr", "SEN", 3),
-    ("Matías Galarza", "PAR", 1),
+    ("Luis Díaz", "COL", 3),
     ("Riyad Mahrez", "ALG", 2),
     ("Marko Arnautović", "AUT", 2),
     ("Leandro Trossard", "BEL", 2),
@@ -167,11 +168,15 @@ DEFAULT_GOALSCORERS = [
     ("Pape Gueye", "SEN", 2),
     ("Nicolas Pépé", "CIV", 2),
     ("Ramin Rezaeian", "IRN", 2),
-    ("Cristiano Ronaldo", "POR", 2),
     ("Folarin Balogun", "USA", 2),
     ("Maximiliano Araújo", "URU", 2),
+    ("Matías Galarza", "PAR", 1),
     ("Lautaro Martínez", "ARG", 1),
     ("Giovani Lo Celso", "ARG", 1),
+    ("Alejandro Garnacho", "ARG", 1),
+    ("Bruno Fernandes", "POR", 1),
+    ("Bukayo Saka", "ENG", 2),
+    ("Jamal Musiala", "GER", 1),
 ]
 
 DEFAULT_CARDS = {
