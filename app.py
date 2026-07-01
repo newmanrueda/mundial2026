@@ -1,19 +1,12 @@
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify, session, Response
 import json
 import os
-import requests
 
 app = Flask(__name__)
 app.secret_key = 'mundial2026-panini-secret'
 
 DATA_FILE = os.path.join(os.path.dirname(__file__), 'data.json')
 ADMIN_PASSWORD = "panini2026"
-
-# GitHub config for persistence
-GITHUB_TOKEN = "ghp_64niJ0tLI1ixnMGUv3UV6bxSVJndSo3bJ3n"
-GITHUB_REPO = "newmanrueda/mundial2026"
-GITHUB_PATH = "data.json"
-GITHUB_RAW_URL = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/{GITHUB_PATH}"
 
 # ── Data Persistence ──────────────────────────────────────────────────────────
 
@@ -200,52 +193,29 @@ DEFAULT_CARDS = {
     "CRO": {"y": 5, "r": 0}, "GHA": {"y": 6, "r": 0}, "PAN": {"y": 8, "r": 0},
 }
 
-# ── GitHub Sync ──────────────────────────────────────────────────────────────
-
-def pull_from_github():
-    """Download data.json from GitHub raw URL. Returns True on success."""
-    try:
-        resp = requests.get(GITHUB_RAW_URL, timeout=10)
-        if resp.status_code == 200:
-            with open(DATA_FILE, 'w', encoding='utf-8') as f:
-                f.write(resp.text)
-            return True
-    except Exception:
-        pass
-    return False
-
-def push_to_github():
-    """Upload current data.json to GitHub repo. Returns True on success."""
-    try:
-        # Get current file SHA first
-        url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_PATH}"
-        headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
-        sha = None
-        resp = requests.get(url, headers=headers, timeout=10)
-        if resp.status_code == 200:
-            sha = resp.json().get("sha")
-
-        # Read current data
-        with open(DATA_FILE, 'r', encoding='utf-8') as f:
-            content = f.read()
-
-        # Upload
-        import base64
-        payload = {
-            "message": f"Update data.json - {__import__('datetime').datetime.now().strftime('%Y-%m-%d %H:%M')}",
-            "content": base64.b64encode(content.encode()).decode(),
-        }
-        if sha:
-            payload["sha"] = sha
-
-        resp = requests.put(url, headers=headers, json=payload, timeout=15)
-        return resp.status_code in (200, 201)
-    except Exception:
-        return False
-
 # ── Load/Save Data ──────────────────────────────────────────────────────────
 
 def load_data():
+    # Try loading from env var first (Render env variable fallback)
+    backup_b64 = os.environ.get('DATA_BACKUP', '')
+    if backup_b64:
+        try:
+            import base64
+            decoded = base64.b64decode(backup_b64).decode()
+            saved = json.loads(decoded)
+            groups = saved.get('groups', DEFAULT_GROUPS)
+            bracket = saved.get('bracket', DEFAULT_BRACKET)
+            goalscorers = saved.get('goalscorers', DEFAULT_GOALSCORERS)
+            cards = saved.get('cards', DEFAULT_CARDS)
+            goalscorers = [tuple(g) for g in goalscorers]
+            # Also write to file for subsequent loads
+            with open(DATA_FILE, 'w', encoding='utf-8') as f:
+                json.dump(saved, f, ensure_ascii=False, indent=2)
+            return groups, bracket, goalscorers, cards
+        except Exception:
+            pass
+
+    # Try local file
     if os.path.exists(DATA_FILE):
         try:
             with open(DATA_FILE, 'r', encoding='utf-8') as f:
@@ -258,12 +228,10 @@ def load_data():
             return groups, bracket, goalscorers, cards
         except (json.JSONDecodeError, KeyError):
             pass
-    # Try GitHub if local file missing
-    if pull_from_github():
-        return load_data()
     return DEFAULT_GROUPS, DEFAULT_BRACKET, DEFAULT_GOALSCORERS, DEFAULT_CARDS
 
 def save_data():
+    global GROUPS, BRACKET, GOALSCORERS, CARDS
     data = {
         'groups': GROUPS,
         'bracket': BRACKET,
@@ -272,8 +240,6 @@ def save_data():
     }
     with open(DATA_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
-    # Also push to GitHub in background
-    push_to_github()
 
 # ── Initialize ──────────────────────────────────────────────────────────────
 
@@ -450,7 +416,7 @@ def stats():
 @app.route('/api/update_score', methods=['POST'])
 def update_score():
     if not session.get('admin'):
-        return jsonify({'success': False, 'error': 'No autorizado. Debes iniciar sesión como admin.'}), 401
+        return jsonify({'success': False, 'error': 'No autorizado'}), 401
     data = request.json
     round_name = data.get('round')
     match_id = data.get('match_id')
@@ -468,7 +434,8 @@ def update_score():
                 if score1 is not None and score2 is not None:
                     match['status'] = 'done'
                 save_data()
-                return jsonify({'success': True})
+                # Return the full bracket so frontend can save to localStorage
+                return jsonify({'success': True, 'bracket': BRACKET})
     return jsonify({'success': False, 'error': 'Match not found'}), 404
 
 @app.route('/api/reset_match', methods=['POST'])
@@ -487,7 +454,7 @@ def reset_match():
                 match['pens2'] = None
                 match['status'] = 'upcoming' if 'r32' in match_id else 'waiting'
                 save_data()
-                return jsonify({'success': True})
+                return jsonify({'success': True, 'bracket': BRACKET})
     return jsonify({'success': False, 'error': 'Match not found'}), 404
 
 # ── API: Update Group Results ──────────────────────────────────────────────
@@ -508,16 +475,46 @@ def update_group():
             return jsonify({'success': True})
     return jsonify({'success': False, 'error': 'Invalid data'}), 400
 
-# ── API: Manual Sync to GitHub ────────────────────────────────────────────
+# ── API: Export / Import ────────────────────────────────────────────────────
 
-@app.route('/api/sync', methods=['POST'])
-def sync_to_github():
+@app.route('/api/export')
+def export_data():
+    """Returns all data as downloadable JSON file."""
+    data = {
+        'groups': GROUPS,
+        'bracket': BRACKET,
+        'goalscorers': GOALSCORERS,
+        'cards': CARDS,
+        'exported_at': __import__('datetime').datetime.now().isoformat()
+    }
+    json_str = json.dumps(data, ensure_ascii=False, indent=2)
+    return Response(
+        json_str,
+        mimetype='application/json',
+        headers={'Content-Disposition': 'attachment; filename=mundial2026_backup.json'}
+    )
+
+@app.route('/api/import', methods=['POST'])
+def import_data():
     if not session.get('admin'):
         return jsonify({'success': False, 'error': 'No autorizado'}), 401
+    global GROUPS, BRACKET, GOALSCORERS, CARDS
+    data = request.json
+    if not data:
+        return jsonify({'success': False, 'error': 'No data provided'}), 400
+    GROUPS = data.get('groups', GROUPS)
+    BRACKET = data.get('bracket', BRACKET)
+    gs = data.get('goalscorers', GOALSCORERS)
+    GOALSCORERS = [tuple(g) if isinstance(g, list) else g for g in gs]
+    CARDS = data.get('cards', CARDS)
     save_data()
-    if push_to_github():
-        return jsonify({'success': True, 'message': 'Datos guardados permanentemente en la nube'})
-    return jsonify({'success': False, 'error': 'Error al sincronizar con GitHub'}), 500
+    return jsonify({'success': True, 'message': f'Datos importados correctamente'})
+
+@app.route('/api/current_bracket')
+def current_bracket():
+    """Returns current bracket data for localStorage sync."""
+    update_bracket()
+    return jsonify({'bracket': BRACKET})
 
 # ── Admin Status ──────────────────────────────────────────────────────────
 

@@ -8,11 +8,20 @@
     <p class="text-yellow-400 text-sm font-medium">🔒 Solo lectura — Los marcadores los actualiza el administrador</p>
 </div>
 {% else %}
-<div class="bg-green-900/30 border border-green-500/30 rounded-xl p-3 mb-6 text-center flex items-center justify-between">
-    <p class="text-green-400 text-sm font-medium">✅ Modo administrador activo</p>
-    <button onclick="syncToCloud()" class="px-4 py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs font-semibold rounded-lg transition-colors">
-        <i class="fas fa-cloud-upload-alt"></i> Guardar en la nube
-    </button>
+<div class="bg-green-900/30 border border-green-500/30 rounded-xl p-3 mb-6 text-center">
+    <p class="text-green-400 text-sm font-medium mb-2">✅ Modo administrador activo — Los marcadores se guardan automáticamente</p>
+    <div class="flex justify-center gap-2 flex-wrap">
+        <button onclick="exportData()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors">
+            <i class="fas fa-download"></i> Descargar backup
+        </button>
+        <button onclick="document.getElementById('importFile').click()" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold rounded-lg transition-colors">
+            <i class="fas fa-upload"></i> Restaurar backup
+        </button>
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)">
+        <button onclick="saveToLS()" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold rounded-lg transition-colors">
+            <i class="fas fa-save"></i> Guardar en mi navegador
+        </button>
+    </div>
 </div>
 {% endif %}
 
@@ -240,6 +249,40 @@
 </div>
 
 <script>
+// ── localStorage persistence ──────────────────────────────────────────────
+const LS_KEY = 'mundial2026_bracket_data';
+
+function saveToLS() {
+    fetch('/api/current_bracket')
+    .then(r => r.json())
+    .then(data => {
+        localStorage.setItem(LS_KEY, JSON.stringify(data.bracket));
+        const btn = event.target;
+        const orig = btn.innerHTML;
+        btn.innerHTML = '✅ Guardado en navegador';
+        setTimeout(() => { btn.innerHTML = orig; }, 2000);
+    });
+}
+
+// On page load, restore from localStorage if available
+(function restoreFromLS() {
+    const ls = localStorage.getItem(LS_KEY);
+    if (!ls) return;
+    try {
+        const saved = JSON.parse(ls);
+        // Apply saved scores to all match inputs
+        for (const [roundName, matches] of Object.entries(saved)) {
+            matches.forEach(match => {
+                const inputs = document.querySelectorAll(`input[onchange*="'${roundName}'"][onchange*="'${match.id}'"]`);
+                if (inputs.length === 2) {
+                    if (match.score1 !== null && match.score1 !== undefined) inputs[0].value = match.score1;
+                    if (match.score2 !== null && match.score2 !== undefined) inputs[1].value = match.score2;
+                }
+            });
+        }
+    } catch(e) {}
+})();
+
 function updateScore(round, matchId, team, value) {
     {% if not is_admin %}
     return;
@@ -268,7 +311,10 @@ function updateScore(round, matchId, team, value) {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            // Don't reload — the value stays visible
+            // Auto-save to localStorage after each score update
+            if (data.bracket) {
+                localStorage.setItem(LS_KEY, JSON.stringify(data.bracket));
+            }
         } else {
             alert('Error: ' + (data.error || 'No autorizado'));
         }
@@ -287,38 +333,46 @@ function resetMatch(round, matchId) {
     })
     .then(r => r.json())
     .then(data => {
-        if (data.success) location.reload();
+        if (data.success) {
+            if (data.bracket) localStorage.setItem(LS_KEY, JSON.stringify(data.bracket));
+            location.reload();
+        }
         else alert('Error: ' + (data.error || 'No autorizado'));
     });
 }
 
-function syncToCloud() {
-    const btn = event.target;
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
-    fetch('/api/sync', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'}
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            btn.innerHTML = '✅ Guardado';
-            setTimeout(() => {
-                btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Guardar en la nube';
-                btn.disabled = false;
-            }, 2000);
-        } else {
-            alert('Error: ' + (data.error || 'Error al guardar'));
-            btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Guardar en la nube';
-            btn.disabled = false;
+function exportData() {
+    window.open('/api/export', '_blank');
+}
+
+function importData(input) {
+    if (!input.files || !input.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            fetch('/api/import', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            })
+            .then(r => r.json())
+            .then(resp => {
+                if (resp.success) {
+                    alert('✅ Datos restaurados correctamente. La página se recargará.');
+                    // Also save to localStorage
+                    if (data.bracket) localStorage.setItem(LS_KEY, JSON.stringify(data.bracket));
+                    location.reload();
+                } else {
+                    alert('Error: ' + (resp.error || 'No se pudo importar'));
+                }
+            });
+        } catch(e) {
+            alert('Error: El archivo no es un JSON válido');
         }
-    })
-    .catch(err => {
-        alert('Error de conexión');
-        btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Guardar en la nube';
-        btn.disabled = false;
-    });
+    };
+    reader.readAsText(input.files[0]);
+    input.value = '';
 }
 </script>
 {% endblock %}
