@@ -98,7 +98,7 @@ DEFAULT_BRACKET = {
         {"id":"r32_9","team1":"BRA","team2":"JPN","score1":2,"score2":1,"date":"Jun 29","time":"","venue":"Houston","status":"done"},
         {"id":"r32_10","team1":"CIV","team2":"NOR","score1":1,"score2":2,"date":"Jun 30","time":"","venue":"Arlington","status":"done"},
         {"id":"r32_11","team1":"MEX","team2":"ECU","score1":2,"score2":0,"date":"Jun 30","time":"","venue":"Mexico City","status":"done"},
-        {"id":"r32_12","team1":"ENG","team2":"COD","score1":None,"score2":None,"date":"Jul 1","time":"12:00pm ET","venue":"Atlanta","status":"upcoming"},
+        {"id":"r32_12","team1":"ENG","team2":"COD","score1":2,"score2":1,"date":"Jul 1","time":"12:00pm ET","venue":"Atlanta","status":"done"},
         {"id":"r32_13","team1":"ARG","team2":"CPV","score1":None,"score2":None,"date":"Jul 3","time":"5:00pm ET","venue":"Miami Gardens","status":"upcoming"},
         {"id":"r32_14","team1":"AUS","team2":"EGY","score1":None,"score2":None,"date":"Jul 3","time":"1:00pm ET","venue":"Arlington","status":"upcoming"},
         {"id":"r32_15","team1":"SUI","team2":"ALG","score1":None,"score2":None,"date":"Jul 2","time":"10:00pm ET","venue":"Vancouver","status":"upcoming"},
@@ -193,7 +193,7 @@ DEFAULT_CARDS = {
     "NOR": {"y": 2, "r": 0}, "SEN": {"y": 2, "r": 0}, "IRQ": {"y": 4, "r": 1},
     "ARG": {"y": 2, "r": 0}, "AUT": {"y": 4, "r": 0}, "ALG": {"y": 1, "r": 0},
     "JOR": {"y": 4, "r": 0}, "COL": {"y": 4, "r": 0}, "POR": {"y": 4, "r": 0},
-    "COD": {"y": 5, "r": 0}, "UZB": {"y": 4, "r": 0}, "ENG": {"y": 2, "r": 0},
+    "COD": {"y": 6, "r": 0}, "UZB": {"y": 4, "r": 0}, "ENG": {"y": 3, "r": 0},
     "CRO": {"y": 2, "r": 0}, "GHA": {"y": 3, "r": 0}, "PAN": {"y": 5, "r": 0},
 }
 
